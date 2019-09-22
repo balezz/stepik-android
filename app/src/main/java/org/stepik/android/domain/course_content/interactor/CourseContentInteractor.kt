@@ -68,7 +68,8 @@ constructor(
                     .flatMap { sectionProgresses ->
                         val lastViewed = courseProgress?.lastViewed
 
-                        val isProgressesActual = lastViewed != null &&
+                        val isProgressesActual =
+                            sectionProgresses.isEmpty() ||
                             sectionProgresses.any { progress -> progress.lastViewed == lastViewed }
 
                         if (isProgressesActual) {
@@ -104,12 +105,50 @@ constructor(
 
     private fun populateUnits(sectionItems: List<CourseContentItem.SectionItem>, units: List<Unit>): Single<List<CourseContentItem.UnitItem>> =
         zip(
-            progressRepository
-                .getProgresses(*units.getProgresses()),
+            getUnitsProgresses(sectionItems, units),
             lessonRepository
                 .getLessons(*units.mapToLongArray(Unit::lesson), primarySourceType = DataSourceType.REMOTE)
         )
             .map { (progresses, lessons) ->
                 courseContentItemMapper.mapUnits(sectionItems, units, lessons, progresses)
+            }
+
+    private fun getUnitsProgresses(sectionItems: List<CourseContentItem.SectionItem>, units: List<Unit>): Single<List<Progress>> =
+        units
+            .getProgresses()
+            .let { progressIds ->
+                if (progressIds.isEmpty()) {
+                    Single.just(emptyList())
+                } else {
+                    progressRepository
+                        .getProgresses(*progressIds, dataSourceType = DataSourceType.CACHE)
+                        .flatMap { unitProgresses ->
+                            val progressesToFetch = mutableListOf<String>()
+                            val unitsMap = units.groupBy(Unit::section)
+
+                            sectionItems.forEach { sectionItem ->
+                                val sectionUnits = unitsMap[sectionItem.section.id] ?: emptyList()
+                                val isProgressesActual =
+                                    sectionUnits.isEmpty() ||
+                                    sectionUnits.any { unit ->
+                                        unitProgresses.any { it.id == unit.progress && sectionItem.progress?.lastViewed == it.lastViewed }
+                                    }
+
+                                if (!isProgressesActual) {
+                                    progressesToFetch += sectionUnits.getProgresses()
+                                }
+                            }
+
+                            if (progressesToFetch.isEmpty()) {
+                                Single.just(unitProgresses)
+                            } else {
+                                progressRepository
+                                    .getProgresses(*progressesToFetch.toTypedArray(), dataSourceType = DataSourceType.REMOTE)
+                                    .map { remoteProgresses ->
+                                        unitProgresses.filterNot { it.id in progressesToFetch } + remoteProgresses
+                                    }
+                            }
+                        }
+                }
             }
 }
