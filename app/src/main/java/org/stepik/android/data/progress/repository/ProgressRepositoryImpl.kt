@@ -16,12 +16,6 @@ constructor(
     private val progressRemoteDataSource: ProgressRemoteDataSource,
     private val progressCacheDataSource: ProgressCacheDataSource
 ) : ProgressRepository {
-    override fun getProgress(progressId: String): Single<Progress> =
-        progressRemoteDataSource
-            .getProgress(progressId)
-            .doCompletableOnSuccess(progressCacheDataSource::saveProgress)
-            .onErrorResumeNext(progressCacheDataSource.getProgress(progressId).toSingle())
-
     override fun getProgresses(vararg progressIds: String, dataSourceType: DataSourceType): Single<List<Progress>> {
         val cacheSource = progressCacheDataSource
             .getProgresses(*progressIds)
@@ -34,7 +28,13 @@ constructor(
                     .onErrorResumeNext(cacheSource)
 
             DataSourceType.CACHE ->
-                cacheSource
+                cacheSource.flatMap { cachedProgresses ->
+                    val ids = (progressIds.toList() - cachedProgresses.mapNotNull(Progress::id)).toTypedArray()
+                    progressRemoteDataSource
+                        .getProgresses(*ids)
+                        .doCompletableOnSuccess(progressCacheDataSource::saveProgresses)
+                        .map { remoteProgresses -> cachedProgresses + remoteProgresses }
+                }
 
             else ->
                 throw IllegalArgumentException("Unsupported source type = $dataSourceType")
