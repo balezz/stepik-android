@@ -41,7 +41,6 @@ constructor(
         }
     }
 
-
     override fun saveProgresses(progresses: List<Progress>): Completable =
         progressCacheDataSource
             .saveProgresses(progresses)

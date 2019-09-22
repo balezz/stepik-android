@@ -65,7 +65,7 @@ constructor(
                     learnersCount = course.learnersCount,
 
                     review = courseReview,
-                    progress = (courseProgress as? Progress),
+                    progress = courseProgress.firstOrNull(),
                     readiness = course.readiness,
                     enrollmentState = enrollmentState
                 )
@@ -79,11 +79,9 @@ constructor(
             .toSingle()
             .onErrorReturnItem(0.0)
 
-    private fun resolveCourseProgress(course: Course): Single<*> =
-        course
-            .progress
-            ?.let(progressRepository::getProgress)
-            ?: Single.just(Unit)
+    private fun resolveCourseProgress(course: Course): Single<List<Progress>> =
+        progressRepository
+            .getProgresses(course.progress ?: "", dataSourceType = DataSourceType.REMOTE)
 
     private fun resolveCourseEnrollmentState(course: Course): Single<EnrollmentState> =
         when {

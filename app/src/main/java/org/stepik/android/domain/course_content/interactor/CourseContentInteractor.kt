@@ -12,6 +12,7 @@ import org.stepik.android.domain.progress.repository.ProgressRepository
 import org.stepik.android.domain.section.repository.SectionRepository
 import org.stepik.android.domain.unit.repository.UnitRepository
 import org.stepik.android.model.Course
+import org.stepik.android.model.Progress
 import org.stepik.android.model.Section
 import org.stepik.android.model.Unit
 import org.stepik.android.presentation.course_content.mapper.CourseContentItemMapper
@@ -40,8 +41,14 @@ constructor(
         Observable.just(course to emptyList())
 
     private fun getContent(course: Course): Observable<Pair<Course, List<CourseContentItem>>> =
-        getSectionsOfCourse(course)
-            .flatMap { populateSections(course, it) }
+        zip(
+            progressRepository
+                .getProgresses(*listOfNotNull(course.progress).toTypedArray()),
+            getSectionsOfCourse(course)
+        )
+            .flatMap{ (progresses, it) ->
+                populateSections(course, progresses.firstOrNull(), it)
+            }
             .flatMapObservable { items ->
                 Single
                     .concat(Single.just(course to items), loadUnits(course, items))
@@ -52,16 +59,29 @@ constructor(
         sectionRepository
             .getSections(*course.sections ?: longArrayOf(), primarySourceType = DataSourceType.REMOTE)
 
-    private fun populateSections(course: Course, sections: List<Section>): Single<List<CourseContentItem>> =
+    private fun populateSections(course: Course, courseProgress: Progress?, sections: List<Section>): Single<List<CourseContentItem>> =
         sections
             .getProgresses()
             .let { progressIds ->
-                zip(
-                    progressRepository.getProgresses(*progressIds, dataSourceType = DataSourceType.CACHE),
-                    progressRepository.getProgresses(*progressIds, dataSourceType = DataSourceType.REMOTE)
-                ) { cacheProgresses, remoteProgresses ->
-                    courseContentItemMapper.mapSectionsWithEmptyUnits(course, sections, remoteProgresses)
-                }
+                progressRepository
+                    .getProgresses(*progressIds, dataSourceType = DataSourceType.CACHE)
+                    .flatMap { sectionProgresses ->
+                        val lastViewed = courseProgress?.lastViewed
+
+                        val isProgressesActual = lastViewed != null &&
+                            sectionProgresses.any { progress -> progress.lastViewed == lastViewed }
+
+                        if (isProgressesActual) {
+                            Single.just(sectionProgresses)
+                        } else {
+                            progressRepository
+                                .getProgresses(*progressIds, dataSourceType = DataSourceType.REMOTE)
+                        }
+                    }
+                    .map { sectionProgresses ->
+                        courseContentItemMapper
+                            .mapSectionsWithEmptyUnits(course, sections, sectionProgresses)
+                    }
             }
 
     private fun loadUnits(course: Course, items: List<CourseContentItem>): Single<Pair<Course, List<CourseContentItem>>> =
