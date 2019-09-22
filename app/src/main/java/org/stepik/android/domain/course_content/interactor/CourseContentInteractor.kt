@@ -53,10 +53,15 @@ constructor(
             .getSections(*course.sections ?: longArrayOf(), primarySourceType = DataSourceType.REMOTE)
 
     private fun populateSections(course: Course, sections: List<Section>): Single<List<CourseContentItem>> =
-        progressRepository
-            .getProgresses(*sections.getProgresses())
-            .map { progresses ->
-                courseContentItemMapper.mapSectionsWithEmptyUnits(course, sections, progresses)
+        sections
+            .getProgresses()
+            .let { progressIds ->
+                zip(
+                    progressRepository.getProgresses(*progressIds, dataSourceType = DataSourceType.CACHE),
+                    progressRepository.getProgresses(*progressIds, dataSourceType = DataSourceType.REMOTE)
+                ) { cacheProgresses, remoteProgresses ->
+                    courseContentItemMapper.mapSectionsWithEmptyUnits(course, sections, remoteProgresses)
+                }
             }
 
     private fun loadUnits(course: Course, items: List<CourseContentItem>): Single<Pair<Course, List<CourseContentItem>>> =
