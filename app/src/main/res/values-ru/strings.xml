@@ -45,7 +45,7 @@
     <string name="connectionProblems">Невозможно установить соединение с сервером</string>
     <string name="video_quality">Качество видео для загрузки</string>
     <string name="video_quality_playing">Качество видео для просмотра</string>
-    <string name="video_quality_presence_message">Пожалуйста, выберите качество видео для</string>
+    <string name="video_quality_presence_message">Пожалуйста, выберите качество видео для последующих загрузок:</string>
 
     <string name="download_error">Ошибка при загрузке видео %s</string>
     <string name="download_error_insufficient_storage">: недостаточно свободного места</string>
@@ -439,7 +439,7 @@
         <item quantity="many">%d курсов</item>
         <item quantity="other">%d курсов</item>
     </plurals>
-    <string name="course_current_progress">Текущий прогресс %d/%d</string>
+    <string name="course_current_progress">Текущий прогресс %d/%d баллов</string>
     <string name="home_streak_counter_text"><![CDATA[Вы решаете <b>%s</b> подряд!]]></string>
     <string name="registration_remind_message">Завершите регистрацию и получите доступ к неограниченному числу бесплатных курсов!</string>
 
@@ -592,6 +592,7 @@
 
     <string name="course_content_time_to_complete_minutes_unit">%d мин</string>
     <string name="course_content_time_to_complete_hours_unit">%d ч</string>
+    <string name="course_content_text_progress_points">%d/%d баллов</string>
 
     <string name="course_content_timeline_begin_date">Дата начала</string>
     <string name="course_content_timeline_end_date">Дата закрытия</string>
@@ -604,7 +605,9 @@
 
     <string name="course_control_schedule">Расписание</string>
     <string name="course_control_filter">Фильтр</string>
-    <string name="course_control_download_all">Скачать все</string>
+    <string name="course_control_download_all">Скачать</string>
+    <string name="course_control_downloaded_for_offline">Загружено (%s)</string>
+    <string name="course_control_processing">Обработка</string>
 
     <string name="course_content_calendar_sync_success">Даты успешно экспортированы в календарь</string>
     <string name="course_content_calendar_no_calendars_error">Календари не найдены</string>
@@ -629,6 +632,7 @@
 
     <string name="video_player_control_notification_channel_name">Управление видео плеером</string>
     <string name="video_player_in_background_popup">Вы можете продолжить воспроизведение видео в фоне</string>
+    <string name="video_player_autoplay_cancel">Остаться на этом шаге</string>
 
 
     <string name="retention_notification_day1_title">Не сбавляем темп</string>
@@ -689,7 +693,7 @@
 
     <string name="step_quiz_feedback_evaluation">Проверка…</string>
     <string name="step_quiz_feedback_correct_free_answer">Любой ответ будет оценен как правильный</string>
-    <string name="step_quiz_feedback_wrong_not_last_try">Пока неправильно, попробуйте еще раз!</string>
+    <string name="step_quiz_feedback_wrong_not_last_try">Пока неправильно, попробуйте еще раз</string>
     <string name="step_quiz_feedback_wrong_last_try">Неверно</string>
 
     <string name="step_quiz_number_description">Введите численный ответ</string>
@@ -744,6 +748,7 @@
 
     <string name="comment_tag_pinned">Закреплен</string>
     <string name="comment_tag_course_team">Команда курса</string>
+    <string name="comment_tag_staff">Команда Stepik</string>
 
     <string name="relative_date_pattern">%s назад</string>
     <string name="relative_date_now">сейчас</string>
@@ -755,4 +760,13 @@
     <string name="main_tab_catalog">Каталог</string>
     <string name="main_tab_profile">Профиль</string>
     <string name="main_tab_notifications">Уведомления</string>
+
+    <!-- Settings -->
+    <string name="setting_section_learning">Обучение</string>
+
+    <string name="setting_autoplay">Автопереход на следующий шаг по окончании видео</string>
+    <string name="setting_autoplay_short">Автопереход на следующий шаг</string>
+
+    <string name="setting_font_size">Размер шрифта в шагах</string>
+    <string name="setting_font_size_dialog_title">Выберите размер шрифта</string>
 </resources>

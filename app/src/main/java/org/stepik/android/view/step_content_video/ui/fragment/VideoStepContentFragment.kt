@@ -1,11 +1,11 @@
 package org.stepik.android.view.step_content_video.ui.fragment
 
+import android.app.Activity
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,16 +18,19 @@ import org.stepic.droid.analytic.Analytic
 import org.stepic.droid.base.App
 import org.stepic.droid.core.ScreenManager
 import org.stepic.droid.persistence.model.StepPersistentWrapper
+import org.stepik.android.view.lesson.ui.interfaces.NextMoveable
 import org.stepic.droid.ui.util.changeVisibility
+import org.stepic.droid.ui.util.snackbar
 import org.stepic.droid.util.argument
-import org.stepic.droid.util.setTextColor
 import org.stepik.android.domain.lesson.model.LessonData
 import org.stepik.android.presentation.step_content_video.VideoStepContentPresenter
 import org.stepik.android.presentation.step_content_video.VideoStepContentView
+import org.stepik.android.view.lesson.ui.interfaces.Playable
 import org.stepik.android.view.video_player.model.VideoPlayerMediaData
+import org.stepik.android.view.video_player.ui.activity.VideoPlayerActivity
 import javax.inject.Inject
 
-class VideoStepContentFragment : Fragment(), VideoStepContentView {
+class VideoStepContentFragment : Fragment(), VideoStepContentView, Playable {
     companion object {
         fun newInstance(stepPersistentWrapper: StepPersistentWrapper, lessonData: LessonData): Fragment =
             VideoStepContentFragment()
@@ -89,19 +92,16 @@ class VideoStepContentFragment : Fragment(), VideoStepContentView {
     private fun openVideoPlayer() {
         if (stepWrapper.cachedVideo == null && stepWrapper.step.block?.video == null) {
             analytic.reportEventWithName(Analytic.Error.ILLEGAL_STATE_VIDEO_STEP_PLAY, stepWrapper.step.id.toString())
-            Snackbar
-                .make(videoStepContent, R.string.step_content_video_no_video, Snackbar.LENGTH_SHORT)
-                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
-                .show()
+            videoStepContent.snackbar(messageRes = R.string.step_content_video_no_video)
         } else {
             val thumbnail = stepWrapper.cachedVideo?.thumbnail
                 ?: stepWrapper.step.block?.video?.thumbnail
-            screenManager.showVideo(activity, VideoPlayerMediaData(
+            screenManager.showVideo(this, VideoPlayerMediaData(
                 thumbnail = thumbnail,
                 title = lessonData.lesson.title ?: "",
                 cachedVideo = stepWrapper.cachedVideo,
                 externalVideo = stepWrapper.step.block?.video
-            ))
+            ), true)
         }
     }
 
@@ -121,5 +121,18 @@ class VideoStepContentFragment : Fragment(), VideoStepContentView {
 
         videoLength.changeVisibility(needShow = videoLengthText != null)
         videoLength.text = videoLengthText
+    }
+
+    override fun play(): Boolean {
+        openVideoPlayer()
+        return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == VideoPlayerActivity.REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            (parentFragment as? NextMoveable)
+                ?.moveNext(isAutoplayEnabled = true)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }

@@ -66,7 +66,8 @@ class CommentDataAdapterDelegate(
         private val commentTagsAdapter = DefaultDelegateAdapter<CommentTag>()
 
         init {
-            commentText.setTextSize(14f)
+            commentText.setTextSize(16f)
+            commentText.setLineHeight(context.resources.getDimensionPixelOffset(R.dimen.comment_item_text_line))
             commentText.setTextIsSelectable(true)
 
             commentReply.setOnClickListener(this)
@@ -117,6 +118,7 @@ class CommentDataAdapterDelegate(
 
             commentTagsAdapter.items = listOfNotNull(
                 CommentTag.COURSE_TEAM.takeIf { data.comment.userRole == UserRole.TEACHER },
+                CommentTag.STAFF.takeIf { data.comment.userRole == UserRole.STAFF },
                 CommentTag.PINNED.takeIf { data.comment.isPinned }
             )
             commentTags.changeVisibility(needShow = commentTagsAdapter.itemCount > 0)

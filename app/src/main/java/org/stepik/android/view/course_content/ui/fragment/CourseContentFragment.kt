@@ -35,12 +35,12 @@ import org.stepic.droid.persistence.model.DownloadProgress
 import org.stepic.droid.ui.dialogs.LoadingProgressDialogFragment
 import org.stepic.droid.ui.dialogs.VideoQualityDetailedDialog
 import org.stepic.droid.ui.util.PopupHelper
+import org.stepic.droid.ui.util.snackbar
 import org.stepic.droid.util.ProgressHelper
 import org.stepic.droid.util.argument
 import org.stepic.droid.util.checkSelfPermissions
 import org.stepic.droid.util.requestMultiplePermissions
 import org.stepic.droid.util.setTextColor
-import org.stepic.droid.util.snackbar
 import org.stepic.droid.web.storage.model.StorageRecord
 import org.stepik.android.domain.calendar.model.CalendarItem
 import org.stepik.android.domain.personal_deadlines.model.Deadline
@@ -166,6 +166,16 @@ class CourseContentFragment :
                                 )
                             )
                         }
+
+                        override fun onRemoveAllClicked(course: Course) {
+                            val fragmentManager = childFragmentManager
+                                .takeIf { it.findFragmentByTag(RemoveCachedContentDialog.TAG) == null }
+                                ?: return
+
+                            RemoveCachedContentDialog
+                                .newInstance(course = course)
+                                .show(fragmentManager, RemoveCachedContentDialog.TAG)
+                        }
                     }
                 )
 
@@ -241,6 +251,10 @@ class CourseContentFragment :
         contentAdapter.updateUnitDownloadProgress(downloadProgress)
     }
 
+    override fun updateCourseDownloadProgress(downloadProgress: DownloadProgress) {
+        contentAdapter.updateCourseDownloadProgress(downloadProgress)
+    }
+
     override fun showChangeDownloadNetworkType() {
         val view = view
             ?: return
@@ -288,7 +302,7 @@ class CourseContentFragment :
     }
 
     override fun showPersonalDeadlinesError() {
-        snackbar(messageRes = R.string.deadlines_fetching_error)
+        view?.snackbar(messageRes = R.string.deadlines_fetching_error)
     }
 
     private fun showPersonalDeadlinesLearningRateDialog() {
@@ -364,7 +378,7 @@ class CourseContentFragment :
     }
 
     override fun showCalendarSyncSuccess() {
-        snackbar(messageRes = R.string.course_content_calendar_sync_success)
+        view?.snackbar(messageRes = R.string.course_content_calendar_sync_success)
     }
 
     override fun showCalendarError(error: CalendarError) {
@@ -381,7 +395,7 @@ class CourseContentFragment :
                     R.string.course_content_calendar_permission_error
             }
 
-        snackbar(messageRes = errorMessage)
+        view?.snackbar(messageRes = errorMessage)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -451,7 +465,15 @@ class CourseContentFragment :
     /**
      * RemoveCachedContentDialog.Callback
      */
-    override fun onRemoveCourseDownloadConfirmed(course: Course) {}
+    override fun onRemoveCourseDownloadConfirmed(course: Course) {
+        analytic.reportAmplitudeEvent(
+            AmplitudeAnalytic.Downloads.DELETED,
+            mapOf(
+                AmplitudeAnalytic.Downloads.PARAM_CONTENT to AmplitudeAnalytic.Downloads.Values.COURSE
+            )
+        )
+        courseContentPresenter.removeCourseDownloadTask(course)
+    }
 
     override fun onRemoveSectionDownloadConfirmed(section: Section) {
         analytic.reportAmplitudeEvent(

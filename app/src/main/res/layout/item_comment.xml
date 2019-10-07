@@ -65,7 +65,7 @@
         android:textSize="16sp"
         android:textColor="@color/new_accent_color"
 
-        fontPath="fonts/Roboto-Bold.ttf"
+        app:fontFamily="@font/roboto_bold"
 
         app:layout_constraintStart_toEndOf="@id/commentUserIconMask"
         app:layout_constraintTop_toBottomOf="@id/commentTags"
@@ -105,8 +105,10 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/commentText"
 
-        android:layout_marginLeft="@dimen/comment_item_margin"
+        android:layout_marginLeft="12dp"
+        android:layout_marginStart="12dp"
         android:layout_marginRight="@dimen/comment_item_margin"
+        android:layout_marginEnd="@dimen/comment_item_margin"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="12dp"/>
 

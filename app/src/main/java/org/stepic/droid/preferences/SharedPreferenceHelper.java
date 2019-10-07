@@ -21,6 +21,7 @@ import org.stepic.droid.util.DateTimeHelper;
 import org.stepic.droid.util.RWLocks;
 import org.stepic.droid.web.AuthenticationStepikResponse;
 import org.stepik.android.domain.discussion_proxy.model.DiscussionOrder;
+import org.stepik.android.domain.step_content_text.model.FontSize;
 import org.stepik.android.model.user.EmailAddress;
 import org.stepik.android.model.user.Profile;
 
@@ -37,6 +38,7 @@ public class SharedPreferenceHelper {
     private static final String DISCOUNTING_POLICY_DIALOG = "discounting_pol_dialog";
     private static final String KEEP_SCREEN_ON_STEPS = "keep_screen_on_steps";
     private static final String IS_ADAPTIVE_MODE_ENABLED = "is_adaptive_mode_enabled";
+    private static final String IS_AUTOPLAY_ENABLED = "is_adaptive_mode_enabled";
     private static final String IS_FIRST_ADAPTIVE_COURSE = "is_first_adaptive_course";
     private static final String IS_ADAPTIVE_EXP_TOOLTIP_WAS_SHOWN = "is_adaptive_exp_tooltip_was_shown";
     private static final String ROTATE_PREF = "rotate_pref";
@@ -94,6 +96,7 @@ public class SharedPreferenceHelper {
     private final String RATE_LAST_TIMESTAMP = "rate_last_timestamp";
     private final String RATE_TIMES_SHOWN = "rate_times_shown";
     private final String RATE_WAS_HANDLED = "rate_was_handled";
+    private final String STEP_CONTENT_FONT_SIZE = "step_content_font_size";
 
     private final static String LAST_SESSION_TIMESTAMP = "last_session_timestamp";
     private final static String RETENTION_NOTITICATION_TIMESTAMP = "retention_notification_timestamp";
@@ -476,6 +479,14 @@ public class SharedPreferenceHelper {
         put(PreferenceType.DEVICE_SPECIFIC, IS_ADAPTIVE_MODE_ENABLED, isEnabled);
     }
 
+    public boolean isAutoplayEnabled() {
+        return getBoolean(PreferenceType.DEVICE_SPECIFIC, IS_AUTOPLAY_ENABLED, true);
+    }
+
+    public void setAutoplayEnabled(boolean isEnabled) {
+        put(PreferenceType.DEVICE_SPECIFIC, IS_AUTOPLAY_ENABLED, isEnabled);
+    }
+
     public void setNeedToShowVideoQualityExplanation(boolean needToShowCalendarWidget) {
         put(PreferenceType.DEVICE_SPECIFIC, VIDEO_QUALITY_EXPLANATION, needToShowCalendarWidget);
     }
@@ -552,7 +563,8 @@ public class SharedPreferenceHelper {
         VIDEO_SETTINGS("video_settings"),
         DEVICE_SPECIFIC("device_specific"),
         FEATURED_FILTER("featured_filter_prefs"),
-        NOTIFICATION("notification");
+        NOTIFICATION("notification"),
+        STEP_CONTENT("step_content");
 
         private String description;
 
@@ -782,6 +794,15 @@ public class SharedPreferenceHelper {
         return getLong(PreferenceType.NOTIFICATION, id);
     }
 
+    public void putStepContentFontSize(FontSize fontSize) {
+        put(PreferenceType.STEP_CONTENT, STEP_CONTENT_FONT_SIZE, fontSize.ordinal());
+    }
+
+    public FontSize getStepContentFontSize() {
+        int ordinal = getInt(PreferenceType.STEP_CONTENT, STEP_CONTENT_FONT_SIZE, 1);
+        return FontSize.values()[ordinal];
+    }
+
     private void put(PreferenceType type, String key, String value) {
         SharedPreferences.Editor editor = context.getSharedPreferences(type.getStoreName(), Context.MODE_PRIVATE).edit();
         editor.putString(key, value).apply();
@@ -800,6 +821,11 @@ public class SharedPreferenceHelper {
     private void put(PreferenceType type, String key, Boolean value) {
         SharedPreferences.Editor editor = context.getSharedPreferences(type.getStoreName(), Context.MODE_PRIVATE).edit();
         editor.putBoolean(key, value).apply();
+    }
+
+    private void put(PreferenceType type, String key, float value) {
+        SharedPreferences.Editor editor = context.getSharedPreferences(type.getStoreName(), Context.MODE_PRIVATE).edit();
+        editor.putFloat(key, value).apply();
     }
 
     private void clear(PreferenceType type) {

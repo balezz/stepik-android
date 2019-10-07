@@ -113,10 +113,13 @@ interface AmplitudeAnalytic {
     object Video {
         const val PLAY_IN_BACKGROUND = "Video played in background"
         const val PLAYBACK_SPEED_CHANGED = "Video rate changed"
+        const val AUTOPLAY = "Video autoplay changed"
 
         object Params {
             const val SOURCE = "source"
             const val TARGET = "target"
+
+            const val IS_ENABLED = "is_enabled"
         }
     }
 
@@ -154,7 +157,6 @@ interface AmplitudeAnalytic {
     object CourseReview {
         const val SCREEN_OPENED = "Course reviews screen opened"
 
-        const val CREATE_REVIEW = "Create course review pressed"
         const val REVIEW_CREATED = "Course review created"
         const val REVIEW_UPDATED = "Course review updated"
         const val REVIEW_REMOVED = "Course review deleted"
@@ -164,6 +166,14 @@ interface AmplitudeAnalytic {
             const val RATING = "rating"
             const val FROM_RATING = "from_rating"
             const val TO_RATING = "to_rating"
+        }
+    }
+
+    object FontSize {
+        const val FONT_SIZE_SELECTED = "Font size selected"
+
+        object Params {
+            const val SIZE = "size"
         }
     }
 }

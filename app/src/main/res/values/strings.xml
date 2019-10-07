@@ -454,7 +454,7 @@
         <item quantity="one">%d course</item>
         <item quantity="other">%d courses</item>
     </plurals>
-    <string name="course_current_progress">Current progress: %d/%d</string>
+    <string name="course_current_progress">Current progress: %d/%d points</string>
     <string name="home_streak_counter_text"><![CDATA[Your current Streak is <b>%s</b>!]]></string>
 
     <string name="notification_badge_placeholder" translatable="false">99+</string>
@@ -622,6 +622,7 @@
     <string name="course_content_time_to_complete_minutes_unit">%d min</string>
     <string name="course_content_time_to_complete_hours_unit">%d h</string>
     <string name="course_content_text_progress" translatable="false">%d/%d</string>
+    <string name="course_content_text_progress_points">%d/%d points</string>
 
     <string name="course_content_timeline_begin_date">Begin date</string>
     <string name="course_content_timeline_end_date">End date</string>
@@ -634,7 +635,9 @@
 
     <string name="course_control_schedule">Schedule</string>
     <string name="course_control_filter">Filter by</string>
-    <string name="course_control_download_all">Download all</string>
+    <string name="course_control_download_all">Download</string>
+    <string name="course_control_downloaded_for_offline">Downloaded (%s)</string>
+    <string name="course_control_processing">Processing</string>
 
     <string name="course_content_calendar_title" translatable="false">%s – %s</string>
     <string name="course_content_calendar_sync_success">Dates successfully exported to calendar</string>
@@ -660,6 +663,7 @@
 
     <string name="video_player_control_notification_channel_name">Video player controls</string>
     <string name="video_player_in_background_popup">You can play video in background</string>
+    <string name="video_player_autoplay_cancel">Stay on this step</string>
 
 
     <string name="retention_notification_day1_title">Don\'t slow down</string>
@@ -776,6 +780,7 @@
 
     <string name="comment_tag_pinned">Pinned</string>
     <string name="comment_tag_course_team">Course Team</string>
+    <string name="comment_tag_staff">Stepik Team</string>
 
     <string name="relative_date_pattern">%s ago</string>
     <string name="relative_date_now">now</string>
@@ -787,4 +792,13 @@
     <string name="main_tab_catalog">Catalog</string>
     <string name="main_tab_profile">Profile</string>
     <string name="main_tab_notifications">Notifications</string>
+
+    <!-- Settings -->
+    <string name="setting_section_learning">Learning</string>
+
+    <string name="setting_autoplay">Auto-transition to next step on video end</string>
+    <string name="setting_autoplay_short">Auto-transition to next step</string>
+
+    <string name="setting_font_size">Font size in steps</string>
+    <string name="setting_font_size_dialog_title">Choose font size</string>
 </resources>

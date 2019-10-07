@@ -5,17 +5,14 @@ import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v4.content.ContextCompat
 import android.support.v7.content.res.AppCompatResources
-import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SimpleItemAnimator
 import android.view.Menu
 import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_comments.*
-import kotlinx.android.synthetic.main.activity_profile_edit_password.*
 import kotlinx.android.synthetic.main.empty_comments.*
 import kotlinx.android.synthetic.main.error_no_connection.*
 import kotlinx.android.synthetic.main.view_centered_toolbar.*
@@ -25,7 +22,7 @@ import org.stepic.droid.base.App
 import org.stepic.droid.base.FragmentActivityBase
 import org.stepik.android.view.comment.ui.dialog.RemoveCommentDialogFragment
 import org.stepic.droid.ui.util.initCenteredToolbar
-import org.stepic.droid.util.setTextColor
+import org.stepic.droid.ui.util.snackbar
 import org.stepik.android.domain.base.PaginationDirection
 import org.stepik.android.domain.comment.model.CommentsData
 import org.stepik.android.model.comments.Comment
@@ -34,6 +31,7 @@ import org.stepik.android.presentation.comment.CommentsPresenter
 import org.stepik.android.presentation.comment.CommentsView
 import org.stepik.android.presentation.comment.model.CommentItem
 import org.stepik.android.view.comment.model.DiscussionOrderItem
+import org.stepik.android.view.comment.ui.adapter.decorator.CommentItemDecoration
 import org.stepik.android.view.comment.ui.adapter.delegate.CommentDataAdapterDelegate
 import org.stepik.android.view.comment.ui.adapter.delegate.CommentLoadMoreRepliesAdapterDelegate
 import org.stepik.android.view.comment.ui.adapter.delegate.CommentPlaceholderAdapterDelegate
@@ -131,9 +129,19 @@ class CommentsActivity :
             adapter = commentsAdapter
             layoutManager = LinearLayoutManager(context)
 
-            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL).apply {
-                ContextCompat.getDrawable(context, R.drawable.list_divider_h)?.let(::setDrawable)
-            })
+            addItemDecoration(CommentItemDecoration(
+                separatorColor = ContextCompat.getColor(context, R.color.grey04),
+                bigSeparatorBounds =
+                    CommentItemDecoration.SeparatorBounds(
+                        size = resources.getDimensionPixelSize(R.dimen.comment_item_separator_big),
+                        offset = 0
+                    ),
+                smallSeparatorBounds =
+                    CommentItemDecoration.SeparatorBounds(
+                        size = resources.getDimensionPixelSize(R.dimen.comment_item_separator_small),
+                        offset = resources.getDimensionPixelOffset(R.dimen.comment_item_reply_separator_offset)
+                    )
+            ))
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -309,10 +317,7 @@ class CommentsActivity :
     }
 
     override fun showNetworkError() {
-        Snackbar
-            .make(root, R.string.no_connection, Snackbar.LENGTH_SHORT)
-            .setTextColor(ContextCompat.getColor(this, R.color.white))
-            .show()
+        root.snackbar(messageRes = R.string.no_connection)
     }
 
     override fun onCommentReplaced(commentsData: CommentsData, isCommentCreated: Boolean) {

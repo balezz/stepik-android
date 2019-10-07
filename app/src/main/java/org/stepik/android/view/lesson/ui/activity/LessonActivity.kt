@@ -29,14 +29,13 @@ import org.stepic.droid.base.App
 import org.stepic.droid.base.FragmentActivityBase
 import org.stepic.droid.ui.adapters.StepFragmentAdapter
 import org.stepic.droid.ui.dialogs.TimeIntervalPickerDialogFragment
-import org.stepic.droid.ui.listeners.NextMoveable
+import org.stepik.android.view.lesson.ui.interfaces.NextMoveable
 import org.stepic.droid.ui.util.initCenteredToolbar
-import org.stepic.droid.util.ColorUtil
+import org.stepic.droid.ui.util.snackbar
 import org.stepic.droid.util.DeviceInfoUtil
 import org.stepic.droid.util.RatingUtil
 import org.stepic.droid.util.reportRateEvent
 import org.stepic.droid.util.resolvers.StepTypeResolver
-import org.stepic.droid.util.setTextColor
 import org.stepik.android.domain.feedback.model.SupportEmailData
 import org.stepik.android.domain.last_step.model.LastStep
 import org.stepik.android.model.Lesson
@@ -50,24 +49,28 @@ import org.stepik.android.view.base.ui.span.TypefaceSpanCompat
 import org.stepik.android.view.fragment_pager.FragmentDelegateScrollStateChangeListener
 import org.stepik.android.view.lesson.routing.getLessonDeepLinkData
 import org.stepik.android.view.lesson.ui.delegate.LessonInfoTooltipDelegate
+import org.stepik.android.view.lesson.ui.interfaces.Playable
 import org.stepik.android.view.ui.delegate.ViewStateDelegate
 import javax.inject.Inject
 
-class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateAppDialog.Companion.Callback, TimeIntervalPickerDialogFragment.Companion.Callback {
+class LessonActivity : FragmentActivityBase(), LessonView,
+    NextMoveable, RateAppDialog.Companion.Callback, TimeIntervalPickerDialogFragment.Companion.Callback {
     companion object {
         private const val EXTRA_SECTION = "section"
         private const val EXTRA_UNIT = "unit"
         private const val EXTRA_LESSON = "lesson"
         private const val EXTRA_BACK_ANIMATION = "back_animation"
+        private const val EXTRA_AUTOPLAY = "autoplay"
 
         private const val EXTRA_LAST_STEP = "last_step"
 
-        fun createIntent(context: Context, section: Section, unit: Unit, lesson: Lesson, isNeedBackAnimation: Boolean = false): Intent =
+        fun createIntent(context: Context, section: Section, unit: Unit, lesson: Lesson, isNeedBackAnimation: Boolean = false, isAutoplayEnabled: Boolean = false): Intent =
             Intent(context, LessonActivity::class.java)
                 .putExtra(EXTRA_SECTION, section)
                 .putExtra(EXTRA_UNIT, unit)
                 .putExtra(EXTRA_LESSON, lesson)
                 .putExtra(EXTRA_BACK_ANIMATION, isNeedBackAnimation)
+                .putExtra(EXTRA_AUTOPLAY, isAutoplayEnabled)
 
         fun createIntent(context: Context, lastStep: LastStep): Intent =
             Intent(context, LessonActivity::class.java)
@@ -223,12 +226,16 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
                 centeredToolbarTitle.text = state.lessonData.lesson.title
 
                 stepsAdapter.lessonData = state.lessonData
-                stepsAdapter.items =
-                    if (state.stepsState is LessonView.StepsState.Loaded) {
-                        state.stepsState.stepItems
-                    } else {
-                        emptyList()
+                if (state.stepsState is LessonView.StepsState.Loaded) {
+                    stepsAdapter.items = state.stepsState.stepItems
+
+                    if (intent.getBooleanExtra(EXTRA_AUTOPLAY, false)) {
+                        lessonPager.post { playCurrentStep() }
+                        intent.removeExtra(EXTRA_AUTOPLAY)
                     }
+                } else {
+                    stepsAdapter.items = emptyList()
+                }
 
                 invalidateTabLayout()
             }
@@ -263,7 +270,7 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
             .showLessonInfoTooltip(stepScore, stepCost, lessonTimeToComplete, certificateThreshold)
     }
 
-    override fun moveNext(): Boolean {
+    override fun moveNext(isAutoplayEnabled: Boolean): Boolean {
         val itemCount = lessonPager
             .adapter
             ?.count
@@ -273,9 +280,17 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
 
         if (isNotLastItem) {
             lessonPager.currentItem++
+            if (isAutoplayEnabled) {
+                playCurrentStep()
+            }
         }
 
         return isNotLastItem
+    }
+
+    private fun playCurrentStep() {
+        (stepsAdapter.activeFragments[lessonPager.currentItem] as? Playable)
+            ?.play()
     }
 
     override fun showComments(step: Step, discussionId: Long) {
@@ -284,8 +299,8 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
 
     override fun showRateDialog() {
         val supportFragmentManager = supportFragmentManager
-                ?.takeIf { it.findFragmentByTag(RateAppDialog.TAG) == null }
-                ?: return
+            ?.takeIf { it.findFragmentByTag(RateAppDialog.TAG) == null }
+            ?: return
 
         val dialog = RateAppDialog.newInstance()
         analytic.reportEvent(Analytic.Rating.SHOWN)
@@ -365,9 +380,7 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
     override fun onTimeIntervalPicked(chosenInterval: Int) {
         lessonPresenter.setStreakTime(chosenInterval)
         analytic.reportEvent(Analytic.Streak.CHOOSE_INTERVAL, chosenInterval.toString())
-        Snackbar.make(lessonPager, R.string.streak_notification_enabled_successfully, Snackbar.LENGTH_LONG)
-            .setTextColor(ColorUtil.getColorArgb(R.color.white, baseContext))
-            .show()
+        lessonPager.snackbar(messageRes = R.string.streak_notification_enabled_successfully, length = Snackbar.LENGTH_LONG)
     }
 
     private fun setupTextFeedback() {
@@ -379,8 +392,6 @@ class LessonActivity : FragmentActivityBase(), LessonView, NextMoveable, RateApp
 
     private fun onStreakDialogCancelled() {
         analytic.reportEvent(Analytic.Streak.NEGATIVE_MATERIAL_DIALOG)
-        Snackbar.make(lessonPager, R.string.streak_notification_canceled, Snackbar.LENGTH_LONG)
-            .setTextColor(ColorUtil.getColorArgb(R.color.white, baseContext))
-            .show()
+        lessonPager.snackbar(messageRes = R.string.streak_notification_canceled, length = Snackbar.LENGTH_LONG)
     }
 }
