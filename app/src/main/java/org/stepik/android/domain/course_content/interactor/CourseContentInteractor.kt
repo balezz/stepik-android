@@ -4,10 +4,13 @@ import com.google.firebase.perf.FirebasePerformance
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.Singles.zip
+import io.reactivex.rxkotlin.toObservable
 import org.stepic.droid.analytic.AmplitudeAnalytic
 import org.stepic.droid.analytic.Analytic
 import org.stepic.droid.util.concat
 import org.stepic.droid.util.mapToLongArray
+import org.stepic.droid.util.plus
+import org.stepic.droid.util.reduce
 import org.stepik.android.domain.base.DataSourceType
 import org.stepik.android.domain.lesson.repository.LessonRepository
 import org.stepik.android.domain.progress.mapper.getProgresses
@@ -19,6 +22,7 @@ import org.stepik.android.model.Progress
 import org.stepik.android.model.Section
 import org.stepik.android.model.Unit
 import org.stepik.android.presentation.course_content.mapper.CourseContentItemMapper
+import org.stepik.android.remote.base.chunkedSingleMap
 import org.stepik.android.view.course_content.model.CourseContentItem
 import javax.inject.Inject
 
@@ -57,9 +61,7 @@ constructor(
                 populateSections(course, progresses.firstOrNull(), it)
             }
             .flatMapObservable { items ->
-                Single
-                    .concat(Single.just(course to items), loadUnits(course, items))
-                    .toObservable()
+                Observable.just(course to items) + loadUnits(course, items)
             }
             .doOnComplete {
                 courseContentLoadingTrace.stop()
@@ -96,23 +98,41 @@ constructor(
                     }
             }
 
-    private fun loadUnits(course: Course, items: List<CourseContentItem>): Single<Pair<Course, List<CourseContentItem>>> =
-        Single
+    private fun loadUnits(course: Course, items: List<CourseContentItem>): Observable<Pair<Course, List<CourseContentItem>>> =
+        Observable
             .just(courseContentItemMapper.getUnitPlaceholdersIds(items))
-            .flatMap(::getUnits)
-            .flatMap { units ->
-                val sectionItems = items
-                    .filterIsInstance<CourseContentItem.SectionItem>()
+            .flatMap { unitIds ->
+                val sources = unitIds
+                    .asIterable()
+                    .chunked(10)
+                    .map { getUnits(it.toLongArray()).toObservable() }
 
-                populateUnits(sectionItems, units)
+                reduce(sources, items) { newItems, units ->
+                    val sectionItems = newItems
+                        .filterIsInstance<CourseContentItem.SectionItem>()
+
+                    populateUnits(sectionItems, units)
+                        .map { unitItems ->
+                            courseContentItemMapper.replaceUnitPlaceholders(newItems, unitItems)
+                        }
+                        .toObservable()
+                }
             }
-            .map { unitItems ->
-                course to courseContentItemMapper.replaceUnitPlaceholders(items, unitItems)
-            }
+            .map { course to it }
+//            .flatMap(::getUnits)
+//            .flatMap { units ->
+//                val sectionItems = items
+//                    .filterIsInstance<CourseContentItem.SectionItem>()
+//
+//                populateUnits(sectionItems, units)
+//            }
+//            .map { unitItems ->
+//                course to courseContentItemMapper.replaceUnitPlaceholders(items, unitItems)
+//            }
 
     private fun getUnits(unitIds: LongArray): Single<List<Unit>> =
         unitRepository
-            .getUnits(*unitIds, primarySourceType = DataSourceType.REMOTE)
+            .getUnits(*unitIds, primarySourceType = DataSourceType.CACHE)
 
     private fun populateUnits(sectionItems: List<CourseContentItem.SectionItem>, units: List<Unit>): Single<List<CourseContentItem.UnitItem>> =
         zip(

@@ -115,3 +115,19 @@ fun <T : Any> Single<List<T>>.maybeFirst(): Maybe<T> =
  */
 fun <T : Any> Single<List<T>>.first(): Single<T> =
     map { it.first() }
+
+fun <T : Any, R : Any> reduce(sources: List<Observable<T>>, seed: R, transform: (R, T) -> Observable<R>): Observable<R> =
+    if (sources.isNotEmpty()) {
+        sources
+            .first()
+            .concatMap {
+                transform(seed, it)
+                    .concatMap {
+                        Observable.just(it) + reduce(sources.subList(1, sources.size), it, transform)
+                    }
+//                val r = transform(seed, it)
+//                Observable.just(r) + reduce(sources.subList(1, sources.size), r, transform)
+            }
+    } else {
+        Observable.empty<R>()
+    }
