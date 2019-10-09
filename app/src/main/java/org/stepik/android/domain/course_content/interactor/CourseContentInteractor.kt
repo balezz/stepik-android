@@ -105,7 +105,7 @@ constructor(
                 val sources = unitIds
                     .asIterable()
                     .chunked(10)
-                    .map { getUnits(it.toLongArray()).toObservable() }
+                    .map { getUnits(it.toLongArray()) }
 
                 reduce(sources, items) { newItems, units ->
                     val sectionItems = newItems
@@ -115,7 +115,6 @@ constructor(
                         .map { unitItems ->
                             courseContentItemMapper.replaceUnitPlaceholders(newItems, unitItems)
                         }
-                        .toObservable()
                 }
             }
             .map { course to it }

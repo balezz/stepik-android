@@ -1,13 +1,15 @@
 package org.stepic.droid.util
 
-import io.reactivex.*
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.rxkotlin.zipWith
-import java.lang.IllegalStateException
 import java.util.concurrent.TimeUnit
-
 
 enum class RxEmpty { INSTANCE }
 
@@ -116,17 +118,15 @@ fun <T : Any> Single<List<T>>.maybeFirst(): Maybe<T> =
 fun <T : Any> Single<List<T>>.first(): Single<T> =
     map { it.first() }
 
-fun <T : Any, R : Any> reduce(sources: List<Observable<T>>, seed: R, transform: (R, T) -> Observable<R>): Observable<R> =
+fun <T : Any, R : Any> reduce(sources: List<Single<T>>, seed: R, transform: (R, T) -> Single<R>): Observable<R> =
     if (sources.isNotEmpty()) {
         sources
             .first()
-            .concatMap {
-                transform(seed, it)
-                    .concatMap {
-                        Observable.just(it) + reduce(sources.subList(1, sources.size), it, transform)
+            .flatMapObservable { item ->
+                transform(seed, item)
+                    .flatMapObservable { value ->
+                        Observable.just(value) + reduce(sources.subList(1, sources.size), value, transform)
                     }
-//                val r = transform(seed, it)
-//                Observable.just(r) + reduce(sources.subList(1, sources.size), r, transform)
             }
     } else {
         Observable.empty<R>()
